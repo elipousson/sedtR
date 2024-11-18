@@ -127,8 +127,8 @@ TSV input file with coordinate attribute columns. \code{\link[=prep_sedt_resourc
 }
 
 If resource is an \code{sf} object or a path to a spatial data file with POLYGON,
-MULTIPOLYGON, or any non-POINT geometry, \code{placement} is used to convert the
-input into points. \code{\link[sf:geos_unary]{sf::st_centroid()}} (if \code{placement = "centroid"}) or
-\code{\link[sf:geos_unary]{sf::st_point_on_surface()}} (if \code{placement = "surface"} which is the default)
+MULTIPOLYGON, or any non-POINT geometry, users should pre-process the data
+with \code{\link[sf:geos_unary]{sf::st_centroid()}} or \code{\link[sf:geos_unary]{sf::st_point_on_surface()}} and use a \code{"weight"}
+column
 option.
 }
