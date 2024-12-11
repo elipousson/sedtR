@@ -135,7 +135,7 @@ weight_resource_by_area <- function(
     ...,
     call = caller_env()) {
   check_is_any(resource, "sf", call = call)
-  check_st_is(area, c("POLYGON", "MULTIPOLYGON"), class = c("sfc", "sf"), call = call)
+  check_st_is_all(area, c("POLYGON", "MULTIPOLYGON"), class = c("sfc", "sf"), call = call)
 
   crs <- sf::st_crs(resource)
   if (crs != sf::st_crs(area)) {
@@ -147,10 +147,10 @@ weight_resource_by_area <- function(
     weight <- arg_match0(weight, c("length", "area"), error_call = call)
 
     if (weight == "length") {
-      check_st_is(resource, c("LINESTRING", "MULTILINESTRING"), call = call)
+      check_st_is_all(resource, c("LINESTRING", "MULTILINESTRING"), call = call)
       weight_fn <- sf::st_length
     } else if (weight == "area") {
-      check_st_is(resource, c("POLYGON", "MULTIPOLYGON"), call = call)
+      check_st_is_all(resource, c("POLYGON", "MULTIPOLYGON"), call = call)
       weight_fn <- sf::st_area
     }
   } else if (rlang::is_function(weight)) {
@@ -163,9 +163,11 @@ weight_resource_by_area <- function(
   }
 
   resource_intersection <- suppressWarnings(
-    sf::st_intersection(
-      x = resource,
-      y = area
+    sf::st_make_valid(
+      sf::st_intersection(
+        x = resource,
+        y = area
+      )
     )
   )
 
