@@ -86,4 +86,3 @@ if (interactive()) {
 }
 }
 }
-\keyword{internal}

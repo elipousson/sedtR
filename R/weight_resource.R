@@ -125,7 +125,6 @@ obj_as_point <- function(
 #'   )
 #' }
 #' }
-#' @keywords internal
 #' @export
 weight_resource_by_area <- function(
     resource,
@@ -209,7 +208,6 @@ weight_resource_by_area <- function(
 #'   `admin_geo`.
 #' @rdname weight_resource_by_area
 #' @name weight_resource_by_admin_geo
-#' @keywords internal
 #' @export
 weight_resource_by_admin_geo <- function(
     resource,
