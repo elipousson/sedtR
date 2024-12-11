@@ -7,7 +7,7 @@
 obj_as_point(
   x,
   split_multi_point = FALSE,
-  placement = c("centroid", "surface"),
+  placement = c("surface", "centroid"),
   allow_type = c("POINT", "MULTIPOINT", "LINESTRING", "MULTILINESTRING", "POLYGON",
     "MULTIPOLYGON"),
   arg = caller_arg(x),
@@ -17,10 +17,19 @@ obj_as_point(
 \arguments{
 \item{x}{A sfg, sfc, or sf object to convert to POINT geometry.}
 
-\item{placement}{If "centroid" (default) convert geometry to POINT using
-\code{\link[sf:geos_unary]{sf::st_centroid()}}. If "surface", use \code{\link[sf:geos_unary]{sf::st_point_on_surface()}}.}
+\item{placement}{If "surface" (default), convert geometry to POINT using
+using \code{\link[sf:geos_unary]{sf::st_point_on_surface()}}. If "centroid", use \code{\link[sf:geos_unary]{sf::st_centroid()}}.}
 
-\item{allow_what}{Allowed types of geometry. Defaults to \code{c("POINT", "MULTIPOINT", "LINESTRING", "MULTILINESTRING", "POLYGON", "MULTIPOLYGON")}.}
+\item{allow_type}{Allowed types of geometry. Defaults to \code{c("POINT", "MULTIPOINT", "LINESTRING", "MULTILINESTRING", "POLYGON", "MULTIPOLYGON")}.}
+
+\item{arg}{An argument name as a string. This argument
+will be mentioned in error messages as the input that is at the
+origin of a problem.}
+
+\item{call}{The execution environment of a currently
+running function, e.g. \code{caller_env()}. The function will be
+mentioned in error messages as the source of the error. See the
+\code{call} argument of \code{\link[rlang:abort]{abort()}} for more information.}
 }
 \description{
 Convert a sfg, sfc, or sf object to use POINT geometry

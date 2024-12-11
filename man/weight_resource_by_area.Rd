@@ -48,6 +48,11 @@ administrative geography.}
 \item{...}{Additional parameters passed to tigris function specified by
 \code{admin_geo}.}
 
+\item{call}{The execution environment of a currently
+running function, e.g. \code{caller_env()}. The function will be
+mentioned in error messages as the source of the error. See the
+\code{call} argument of \code{\link[rlang:abort]{abort()}} for more information.}
+
 \item{geo}{One of "city", "county", "state", or "national". Not yet
 implemented but this parameter should be used for validating the
 \code{admin_geo} value.}

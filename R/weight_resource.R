@@ -35,7 +35,7 @@ check_st_is_all <- function(x,
   x_type <- unique(sf::st_geometry_type(x))
 
   cli::cli_abort(
-    "{.arg {arg}} must be use only {.or {type}} geometry,
+    "{.arg {arg}} must use only {.or {type}} geometry,
     not {.and {x_type}}.",
     call = call
   )
@@ -44,15 +44,16 @@ check_st_is_all <- function(x,
 #' Convert a sfg, sfc, or sf object to use POINT geometry
 #'
 #' @param x A sfg, sfc, or sf object to convert to POINT geometry.
-#' @param placement If "centroid" (default) convert geometry to POINT using
-#'   [sf::st_centroid()]. If "surface", use [sf::st_point_on_surface()].
-#' @param allow_what Allowed types of geometry. Defaults to `c("POINT",
+#' @param placement If "surface" (default), convert geometry to POINT using
+#'   using [sf::st_point_on_surface()]. If "centroid", use [sf::st_centroid()].
+#' @param allow_type Allowed types of geometry. Defaults to `c("POINT",
 #'   "MULTIPOINT", "LINESTRING", "MULTILINESTRING", "POLYGON", "MULTIPOLYGON")`.
+#' @inheritParams rlang::args_error_context
 #' @keywords internal
 obj_as_point <- function(
     x,
     split_multi_point = FALSE,
-    placement = c("centroid", "surface"),
+    placement = c("surface", "centroid"),
     allow_type = c(
       "POINT", "MULTIPOINT",
       "LINESTRING", "MULTILINESTRING",
@@ -60,6 +61,7 @@ obj_as_point <- function(
     ),
     arg = caller_arg(x),
     call = caller_env()) {
+  # Check input geometry type and class
   check_st_is_all(
     x = x,
     type = allow_type,
@@ -68,6 +70,7 @@ obj_as_point <- function(
     call = call
   )
 
+  # Optionally split MULTIPOINT objects into POINT objects
   if (split_multi_point && all(sf::st_is(x, c("POINT", "MULTIPOINT")))) {
     x <- sf::st_cast(x, "POINT", warn = FALSE, do_split = TRUE)
   }
@@ -76,7 +79,8 @@ obj_as_point <- function(
     return(x)
   }
 
-  placement <- arg_match(placement)
+  # Set and apply POINT placement function
+  placement <- arg_match(placement, error_call = call)
 
   placement_fn <- switch(placement,
     surface = sf::st_point_on_surface,
@@ -109,6 +113,7 @@ obj_as_point <- function(
 #'   [sf::st_centroid()], or "none" returns geometry with the same type as the
 #'   input resource modified only by the intersection with the specified
 #'   administrative geography.
+#' @inheritParams rlang::args_error_context
 #' @returns A modified sf object supplied to `resource` where features are
 #'   intersected with `area` and optionally transformed to use POINT geometry.
 #' @examples
@@ -133,18 +138,28 @@ weight_resource_by_area <- function(
     placement = "surface",
     ...,
     call = caller_env()) {
-  check_is_any(resource, "sf", call = call)
-  check_st_is_all(area, c("POLYGON", "MULTIPOLYGON"), class = c("sfc", "sf"), call = call)
 
+  # Validate resource and area input objects
+  check_is_any(resource, "sf", call = call)
+  check_st_is_all(
+    area,
+    type = c("POLYGON", "MULTIPOLYGON"),
+    class = c("sfc", "sf"),
+    call = call
+  )
+
+  # Transform area CRS to match resource if needed
   crs <- sf::st_crs(resource)
   if (crs != sf::st_crs(area)) {
     area <- sf::st_transform(area, crs = crs)
   }
 
+  # Set weight function based on `weight` value
   if (is.character(weight)) {
     # TODO: Add a "count" option to weight
     weight <- arg_match0(weight, c("length", "area"), error_call = call)
 
+    # Validate resource geometry type depending on weight specification
     if (weight == "length") {
       check_st_is_all(resource, c("LINESTRING", "MULTILINESTRING"), call = call)
       weight_fn <- sf::st_length
@@ -161,6 +176,7 @@ weight_resource_by_area <- function(
     area <- area[, attr(area, "sf_column"), drop = FALSE]
   }
 
+  # Get valid intersection of resource and area
   resource_intersection <- suppressWarnings(
     sf::st_make_valid(
       sf::st_intersection(
@@ -170,12 +186,14 @@ weight_resource_by_area <- function(
     )
   )
 
+  # TODO: Swap for a warning w/ better handling for name conflicts
   stopifnot(
     !has_name(resource_intersection, weight)
   )
 
   sf_column <- attr(resource_intersection, "sf_column")
 
+  # Create weight column based on geometry
   resource_intersection <- dplyr::mutate(
     resource_intersection,
     # TODO: Consider if units class should be preserved and if `call_sedt_api()`
@@ -184,7 +202,12 @@ weight_resource_by_area <- function(
     .before = dplyr::all_of(sf_column)
   )
 
-  placement <- arg_match(placement, error_call = call)
+  # Validate placement (obj_as_point does not support the "none" option)
+  placement <- arg_match0(
+    placement,
+    c("surface", "centroid", "none"),
+    error_call = call
+  )
 
   if (placement == "none") {
     return(resource_intersection)
@@ -192,7 +215,8 @@ weight_resource_by_area <- function(
 
   obj_as_point(
     resource_intersection,
-    placement = placement
+    placement = placement,
+    call = call
   )
 }
 
@@ -231,6 +255,7 @@ weight_resource_by_admin_geo <- function(
     error_call = call
   )
 
+  # TODO: Consider setting `filter_by` argument using area
   admin_geo <- switch(admin_geo,
     tract = suppressMessages(tigris::tracts(
       year = year,
