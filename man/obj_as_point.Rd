@@ -8,8 +8,10 @@ obj_as_point(
   x,
   split_multi_point = FALSE,
   placement = c("centroid", "surface"),
-  allow_what = c("POINT", "MULTIPOINT", "LINESTRING", "MULTILINESTRING", "POLYGON",
-    "MULTIPOLYGON")
+  allow_type = c("POINT", "MULTIPOINT", "LINESTRING", "MULTILINESTRING", "POLYGON",
+    "MULTIPOLYGON"),
+  arg = caller_arg(x),
+  call = caller_env()
 )
 }
 \arguments{

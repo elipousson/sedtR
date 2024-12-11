@@ -9,8 +9,9 @@ weight_resource_by_area(
   resource,
   area,
   weight = c("length", "area"),
-  placement = c("centroid", "surface", "none"),
-  ...
+  placement = "surface",
+  ...,
+  call = caller_env()
 )
 
 weight_resource_by_admin_geo(
@@ -20,40 +21,69 @@ weight_resource_by_admin_geo(
   geo = "city",
   admin_geo = "tract",
   weight = c("length", "area"),
-  placement = c("centroid", "surface", "none"),
+  placement = "surface",
+  year = getOption("sedtR.year", 2021),
   ...,
   call = caller_env()
 )
 }
 \arguments{
-\item{resource}{A sf object to modify.}
+\item{resource}{A \code{sf} object to modify.}
 
-\item{area}{A sf or sfc object to intersect with resource.}
+\item{area}{A \code{sf} or \code{sfc} object to intersect with resource.}
 
-\item{weight}{If "length", use \code{\link[sf:geos_measures]{sf::st_length()}} to assign weight. If "area",
-use \code{\link[sf:geos_measures]{sf::st_area()}} to assign weight.}
+\item{weight}{Type of function to use in calculating the weight value. If
+"length", use \code{\link[sf:geos_measures]{sf::st_length()}} and, if "area", use
+\code{\link[sf:geos_measures]{sf::st_area()}} to calculate weight values based on the geometry. \code{weight}
+can also be any other function that supports the geometry column as the
+only input parameter. If \code{weight} is a function, the results are coerced to
+a numeric vector (dropping the units class if available).}
 
-\item{placement}{One of "centroid", "surface", or "none".}
+\item{placement}{Type of function to use in processing the returned geometry.
+"surface" (default) uses \code{\link[sf:geos_unary]{sf::st_point_on_surface()}}, "centroid" uses
+\code{\link[sf:geos_unary]{sf::st_centroid()}}, or "none" returns geometry with the same type as the
+input resource modified only by the intersection with the specified
+administrative geography.}
 
-\item{...}{arguments to be passed to internal function \code{load_tiger}, which is not exported. See Additional Arguments.}
+\item{...}{Additional parameters passed to tigris function specified by
+\code{admin_geo}.}
 
-\item{state}{The two-digit FIPS code (string) of the state you want. Can also
-be state name or state abbreviation. When \code{NULL} and combined with \code{cb = TRUE}, a national dataset of Census tracts will be returned for years 2019
-and later.}
+\item{geo}{One of "city", "county", "state", or "national". Not yet
+implemented but this parameter should be used for validating the
+\code{admin_geo} value.}
 
-\item{county}{The three-digit FIPS code (string) of the county you'd like to
-subset for, or a vector of FIPS codes if you desire multiple counties. Can
-also be a county name or vector of names.}
+\item{admin_geo}{Type of geometry to use for intersecting area. One of
+"tract" (default), "county", or "state" specifying the corresponding tigris
+function (\code{tigris::tracts}, \code{tigris::counties}, or \code{tigris::states}).}
 
-\item{geo}{One of "city", "county", "state", or "national".}
-
-\item{admin_geo}{One of "tract", "county", or "state".}
+\item{year}{Year of data passed to tigris functions. Uses global
+\code{"sedtR.year"} option or 2021 if option is not set.}
+}
+\value{
+A modified sf object supplied to \code{resource} where features are
+intersected with \code{area} and optionally transformed to use POINT geometry.
 }
 \description{
-\code{\link[=weight_resource_by_area]{weight_resource_by_area()}} uses \code{\link[sf:geos_binary_ops]{sf::st_intersection()}} to combine
-\code{resource} with \code{area} to derive a new weight column based on the length or
-area of the intersected geometry. \code{\link[=weight_resource_by_admin_geo]{weight_resource_by_admin_geo()}} is a
-variation that uses the \code{{tigris}} package to download administrative areas
-from the U.S. Census Bureau to use as the \code{area} input.
+\code{\link[=weight_resource_by_area]{weight_resource_by_area()}} uses \code{\link[sf:geos_binary_ops]{sf::st_intersection()}} to combine a
+\code{resource} sf object with \code{area} geometry to derive a new weight column based
+on the length or area of the geometry created by the intersection.
+\code{\link[=weight_resource_by_admin_geo]{weight_resource_by_admin_geo()}} is a variation that uses the \code{{tigris}}
+package to download administrative areas from the U.S. Census Bureau to use
+as the \code{area} input.
+}
+\examples{
+\dontrun{
+if (interactive()) {
+  nc <- sf::st_read(system.file("shape/nc.shp", package = "sf"))
+
+  roads <- tigris::roads(state = "NC", county = nc$NAME[1:5])
+
+  weight_resource_by_area(
+    roads,
+    nc[1:5, ],
+    weight = "length"
+  )
+}
+}
 }
 \keyword{internal}
